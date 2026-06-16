@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pac-Man</title>
+    <style>
+    /* Styles for the game container */
+    body {
+        margin: 0;
+        overflow: hidden; /* Avoid page scrolling */
+        background-color: black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: 'Arial', sans-serif;
+    }
+    
+    #game-canvas {
+        border: 2px solid white; /* Add a white border to the canvas */
+    }
+
+    /* Styles for the maze walls */
+    .wall {
+        background-color: #0033FF;
+    }
+
+    /* Style for the empty space in the maze */
+    .empty {
+        background-color: black;
+    }
+
+    /* Style for Pac-Man */
+    .pacman {
+        background-color: yellow;
+        border-radius: 50%;
+        overflow: hidden;
+    }
+
+    /* Start screen styles */
+    #start-screen {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        text-align: center;
+    }
+
+    button {
+        padding: 10px 20px;
+        border: none;
+        background-color: #0033FF;
+        color: white;
+        cursor: pointer;
+        font-size: 16px;
+        border-radius: 5px;
+    }
+
+    button:hover {
+        background-color: #0055FF;
+    }
+
+    /* Score display */
+    #score {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+    }
+    </style>
+</head>
+<body>
+    <div id="start-screen">
+        <h1>Pac-Man</h1>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+    <canvas id="game-canvas"></canvas>
+    <div id="score">Score: 0</div>
+    <script>
+    let score = 0;
+
+    function startGame() {
+        document.getElementById("start-screen").style.display = "none";
+        // TODO: Start game loop here
+    }
+
+    function updateScore(points) {
+        score += points;
+        document.getElementById("score").textContent = "Score: " + score;
+    }
+
+    // TODO: Add collision detection for power pills and increase score accordingly
+    // TODO: Implement pause and resume functionality
+
+    const canvas = document.getElementById("game-canvas");
+    const context = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const pacman = {
+        x: canvas.width / 2,
+        y: canvas.height / 2,
+        radius: 20,
+        mouthAngle: 0.2,
+        speed: 5,
+        angle: 0,
+        moving: false,
+    };
+    const gameMap = [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 2, 0, 1, 0, 0, 0, 0, 2, 1],
+        [1, 0, 1, 1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 0, 0, 2, 1, 2, 1, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    ];
+
+        // Tamaño de los bloques del laberinto
+        const blockSize = Math.min(canvas.width / gameMap[0].length, canvas.height / gameMap.length);
+
+        // Función para dibujar el mapa
+        function drawMap() {
+            for (let row = 0; row < gameMap.length; row++) {
+                for (let col = 0; col < gameMap[row].length; col++) {
+                    const tile = gameMap[row][col];
+
+                    // Utiliza clases CSS para aplicar estilos a las paredes y el espacio vacío
+                    const tileClass = tile === 1 ? 'wall' : 'empty';
+
+                    // Dibuja el espacio vacío primero
+                    context.fillStyle = tileClass === 'empty' ? 'black' : 'transparent';
+                    context.fillRect(col * blockSize, row * blockSize, blockSize, blockSize);
+
+                    // Luego, dibuja las paredes encima
+                    if (tileClass === 'wall') {
+                        context.fillStyle = 'blue';
+                        context.fillRect(col * blockSize, row * blockSize, blockSize, blockSize);
+                    }
+                }
+            }
+        }
+
+
+        // Función para dibujar a Pac-Man
+        function drawPacman() {
+            context.save(); // Guardar el estado actual del contexto
+            context.translate(pacman.x, pacman.y); // Cambiar el origen de coordenadas al centro de Pac-Man
+            context.rotate(pacman.angle); // Aplicar rotación a Pac-Man
+
+            // Utiliza una clase CSS para aplicar estilos a Pac-Man
+            context.fillStyle = 'yellow';
+            context.beginPath();
+            context.arc(0, 0, pacman.radius, -pacman.mouthAngle, pacman.mouthAngle, true);
+            context.lineTo(0, 0);
+            context.fill();
+            context.closePath();
+
+            context.restore(); // Restaurar el estado anterior del contexto
+        }
+
+        // Función para verificar si Pac-Man colisiona con una pared
+        function checkCollision(x, y) {
+            const col = Math.floor(x / blockSize);
+            const row = Math.floor(y / blockSize);
+
+            return gameMap[row] && gameMap[row][col] === 1;
+        }
+
+        // Función para actualizar el juego
+        function update() {
+            // Dibuja el mapa
+            drawMap();
+
+            // Si Pac-Man se está moviendo, actualiza su posición y ángulo
+            if (pacman.moving) {
+                const newX = pacman.x + pacman.speed * Math.cos(pacman.angle);
+                const newY = pacman.y + pacman.speed * Math.sin(pacman.angle);
+
+                // Verificar colisión con las paredes
+                if (!checkCollision(newX, newY)) {
+                    pacman.x = newX;
+                    pacman.y = newY;
+
+                    // Cambiar la apertura de la boca con el movimiento
+                    pacman.mouthAngle += 0.1;
+                    if (pacman.mouthAngle >= 0.8) {
+                        pacman.mouthAngle = 0.2;
+                    }
+                }
+            }
+
+            // Dibuja a Pac-Man
+            drawPacman();
+
+            // Llama a esta función nuevamente después de un intervalo de tiempo
+            requestAnimationFrame(update);
+        }
+
+        // Función para manejar eventos de teclado
+        function handleKeyDown(event) {
+            if (event.key === "ArrowUp") {
+                pacman.angle = -Math.PI / 2; // Rotar hacia arriba
+                pacman.moving = true;
+            } else if (event.key === "ArrowDown") {
+                pacman.angle = Math.PI / 2; // Rotar hacia abajo
+                pacman.moving = true;
+            } else if (event.key === "ArrowLeft") {
+                pacman.angle = Math.PI; // Rotar hacia la izquierda
+                pacman.moving = true;
+            } else if (event.key === "ArrowRight") {
+                pacman.angle = 0; // Rotar hacia la derecha
+                pacman.moving = true;
+            }
+        }
+
+        // Función para manejar eventos de teclado cuando se suelta una tecla
+        function handleKeyUp() {
+            pacman.moving = false;
+        }
+
+        // Función principal del juego
+        function main() {
+            // Añadir manejadores de eventos de teclado
+            document.addEventListener("keydown", handleKeyDown);
+            document.addEventListener("keyup", handleKeyUp);
+
+            // Actualiza el juego por primera vez
+            requestAnimationFrame(update);
+        }
+
+        // Iniciar el juego
+        main();
+    </script>
+</body>
+</html>
